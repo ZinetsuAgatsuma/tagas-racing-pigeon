@@ -71,8 +71,6 @@ export default function App() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  // 1. Session state checking on mount
   useEffect(() => {
     const savedUser = localStorage.getItem(AUTH_STORAGE_KEY);
     if (savedUser) {
