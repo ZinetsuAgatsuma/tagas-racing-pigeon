@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import cors from 'cors';
 import express from 'express';
 import { db, hashPassword, calculateHaversineDistance } from './src/server/db';
 import { Player, Loft, RacingEvent, EventRegistration, AuditLog, AppNotification } from './src/types';
@@ -9,6 +10,8 @@ function normalizeClockingCode(value: string): string {
 
 export async function createApiApp() {
   const app = express();
+
+  app.use(cors());
 
   // Body parser
   app.use(express.json());
