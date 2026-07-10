@@ -1,0 +1,6 @@
+{
+  "name": "Pigeon Racing Clocking System",
+  "description": "A comprehensive, responsive system for managing pigeon racing competitions, featuring administrator and player dashboards, interactive Leaflet mapping for lofts and release points, automatic Haversine distance and speed calculations, live leaderboard, secure role-based authentication, and performance reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

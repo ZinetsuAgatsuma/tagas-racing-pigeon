@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-primary-green-50: #f0fdf4;
+  --color-primary-green-100: #dcfce7;
+  --color-primary-green-500: #10b981;
+  --color-primary-green-600: #059669;
+  --color-primary-green-700: #047857;
+  --color-primary-green-800: #065f46;
+  --color-primary-green-900: #064e3b;
+}
+
+/* Base custom resets for map sizing & scrollbars */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #f9fafb;
+  font-family: var(--font-sans);
+  color: #1f2937;
+  overflow-x: hidden;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 10;
+  border-radius: 0.5rem;
+}
+
+/* Custom prints layout */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1.5cm !important;
+  }
+}
+
