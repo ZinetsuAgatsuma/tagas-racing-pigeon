@@ -19,6 +19,10 @@ export async function createApiApp() {
     next();
   });
 
+  app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, service: 'pigeon-racing-clocking-system' });
+  });
+
   // Helper for creating audit log entries
   async function logAction(userId: string, username: string, action: string, details: string) {
     const log: AuditLog = {
