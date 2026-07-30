@@ -66,6 +66,60 @@ export function calculateHaversineDistance(lat1: number, lon1: number, lat2: num
   return parseFloat((R * c).toFixed(2)); // Distance in meters
 }
 
+/** Philippines has no DST; race times are always Asia/Manila (UTC+8). */
+export const RACE_TIMEZONE_OFFSET = '+08:00';
+
+/**
+ * Parse event race date + release time as an absolute Asia/Manila datetime.
+ * Avoids server-local timezone bugs (e.g. Vercel UTC) that made elapsed time ~0.02 min.
+ */
+export function parseRaceReleaseDateTime(raceDate: string | Date, releaseTime: string): Date {
+  let datePart: string;
+  if (raceDate instanceof Date) {
+    datePart = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(raceDate);
+  } else {
+    const raw = String(raceDate).trim();
+    const isoDate = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (!isoDate) {
+      throw new Error(`Invalid race date: ${raceDate}`);
+    }
+    datePart = isoDate[1];
+  }
+
+  const timeMatch = String(releaseTime).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!timeMatch) {
+    throw new Error(`Invalid release time: ${releaseTime}`);
+  }
+
+  const hours = timeMatch[1].padStart(2, '0');
+  const minutes = timeMatch[2];
+  const seconds = (timeMatch[3] || '00').padStart(2, '0');
+
+  const releaseDateTime = new Date(
+    `${datePart}T${hours}:${minutes}:${seconds}${RACE_TIMEZONE_OFFSET}`
+  );
+
+  if (Number.isNaN(releaseDateTime.getTime())) {
+    throw new Error(`Could not parse release datetime from ${datePart} ${releaseTime}`);
+  }
+
+  return releaseDateTime;
+}
+
+/** Elapsed flight time in minutes from release to clock. */
+export function calculateElapsedMinutes(releaseDateTime: Date, clockTime: Date): number {
+  const elapsedMs = clockTime.getTime() - releaseDateTime.getTime();
+  if (elapsedMs <= 0) {
+    throw new Error('Clocking failed. Clock time is before the official release time.');
+  }
+  return elapsedMs / 60000;
+}
+
 // Interfaces for our database schema
 export interface DatabaseSchema {
   players: Player[];

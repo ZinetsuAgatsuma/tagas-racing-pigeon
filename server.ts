@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
-import { db, hashPassword, calculateHaversineDistance } from './src/server/db';
+import { db, hashPassword, calculateHaversineDistance, parseRaceReleaseDateTime, calculateElapsedMinutes } from './src/server/db';
 import { Player, Loft, RacingEvent, EventRegistration, AuditLog, AppNotification } from './src/types';
 
 function normalizeClockingCode(value: string): string {
@@ -788,17 +788,21 @@ export async function createApiApp() {
       // A. Distance in meters using Haversine
       const distanceMeters = calculateHaversineDistance(releaseLat, releaseLng, loftLat, loftLng);
 
-      // B. Calculate Elapsed Time (minutes)
-      const releaseDateTime = new Date(`${event.raceDate}T${event.releaseTime}`);
-      
-      let elapsedMs = clockTime.getTime() - releaseDateTime.getTime();
-      if (elapsedMs <= 0) {
-        elapsedMs = 1000; // 1 second minimum to avoid division issues
+      // B. Calculate Elapsed Time (minutes) — release always in Asia/Manila (+08:00)
+      let releaseDateTime: Date;
+      let elapsedMinutesRaw: number;
+      try {
+        releaseDateTime = parseRaceReleaseDateTime(event.raceDate, event.releaseTime);
+        elapsedMinutesRaw = calculateElapsedMinutes(releaseDateTime, clockTime);
+      } catch (calcError: any) {
+        res.status(400).json({ error: calcError.message || 'Failed to calculate elapsed flight time.' });
+        return;
       }
-      const elapsedMinutes = parseFloat((elapsedMs / 60000).toFixed(2));
 
-      // C. Calculate Speed (meters / minute)
-      const speedMetersPerMinute = parseFloat((distanceMeters / elapsedMinutes).toFixed(2));
+      const elapsedMinutes = parseFloat(elapsedMinutesRaw.toFixed(2));
+
+      // C. Calculate Speed (meters / minute) using full-precision elapsed time
+      const speedMetersPerMinute = parseFloat((distanceMeters / elapsedMinutesRaw).toFixed(2));
 
       // Update registration data
       const updatedReg: Partial<EventRegistration> = {
