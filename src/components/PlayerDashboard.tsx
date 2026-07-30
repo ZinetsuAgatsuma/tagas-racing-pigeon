@@ -303,7 +303,6 @@ export default function PlayerDashboard({
                       <th className="px-6 py-4">Race Date</th>
                       <th className="px-6 py-4">Registered Loft</th>
                       <th className="px-6 py-4">Bird Ring Number</th>
-                      <th className="px-6 py-4">Unique Clocking Code</th>
                       <th className="px-6 py-4">Race Status</th>
                     </tr>
                   </thead>
@@ -320,11 +319,7 @@ export default function PlayerDashboard({
                           </td>
                           <td className="px-6 py-4 font-medium text-gray-700">{r.loftName}</td>
                           <td className="px-6 py-4 font-mono font-bold text-gray-900">{r.ringNumber}</td>
-                          <td className="px-6 py-4">
-                            <span className="font-mono font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100 select-all tracking-wider">
-                              {r.clockingCode}
-                            </span>
-                          </td>
+                     
                           <td className="px-6 py-4">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
                               eventDetails?.status === 'Upcoming'
