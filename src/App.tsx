@@ -12,6 +12,7 @@ import AdminLeaderboard from './components/AdminLeaderboard';
 import AdminAuditLogs from './components/AdminAuditLogs';
 import ReportView from './components/ReportView';
 import PlayerDashboard from './components/PlayerDashboard';
+import PlayerSelfRegister from './components/PlayerSelfRegister';
 import { Compass, ShieldAlert, Key, Loader2, RefreshCw } from 'lucide-react';
 
 const AUTH_STORAGE_KEY = 'prcs_user';
@@ -29,6 +30,7 @@ export default function App() {
   const [apiError, setApiError] = useState('');
   const [authenticating, setAuthenticating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showRegister, setShowRegister] = useState(false);
 
   // Core Data States
   const [players, setPlayers] = useState<Player[]>([]);
@@ -474,6 +476,10 @@ export default function App() {
     );
   }
 
+  if (!user && showRegister) {
+    return <PlayerSelfRegister apiUrl={apiUrl} onBack={() => setShowRegister(false)} />;
+  }
+
   if (!user) {
     // Elegant, pristine slate/emerald Login card
     return (
@@ -543,7 +549,16 @@ export default function App() {
               </button>
             </form>
 
-           
+            <button
+              type="button"
+              onClick={() => setShowRegister(true)}
+              className="w-full rounded-xl border border-slate-700 py-3 text-xs font-bold text-slate-200 transition-colors hover:border-emerald-500 hover:text-white"
+            >
+              Register as a player
+            </button>
+            <p className="text-center text-[11px] leading-relaxed text-slate-500">
+              New racers take a live loft photo. GPS on that photo is saved as the loft location, then an admin approves the account.
+            </p>
           </div>
         </div>
       </div>

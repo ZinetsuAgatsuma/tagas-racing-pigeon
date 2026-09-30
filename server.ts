@@ -14,7 +14,7 @@ export async function createApiApp() {
   app.use(cors());
 
   // Body parser
-  app.use(express.json());
+  app.use(express.json({ limit: '8mb' }));
 
   // Simple Request Logging / Debug
   app.use((req, res, next) => {
@@ -84,6 +84,11 @@ export async function createApiApp() {
       if (player) {
         const hashed = hashPassword(password);
         if (player.passwordHash === hashed) {
+          if (player.status === 'Pending') {
+            res.status(403).json({ error: 'Your registration is waiting for administrator approval.' });
+            return;
+          }
+
           if (player.status === 'Inactive') {
             res.status(403).json({ error: 'Your account is inactive. Please contact the administrator.' });
             return;
@@ -106,6 +111,123 @@ export async function createApiApp() {
       res.status(401).json({ error: 'Invalid username or password.' });
     } catch (error: any) {
       console.error('Error in login endpoint:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
+  // Public self-registration: live loft photo + GPS, pending admin approval
+  app.post('/api/public/register', async (req, res) => {
+    try {
+      const {
+        fullName,
+        address,
+        contactNumber,
+        email,
+        username,
+        password,
+        loftName,
+        photo,
+        latitude,
+        longitude,
+        accuracyMeters,
+        photoTakenAt
+      } = req.body;
+
+      if (!fullName || !username || !password || !loftName) {
+        res.status(400).json({ error: 'Full name, loft name, username, and password are required.' });
+        return;
+      }
+
+      if (String(password).length < 6) {
+        res.status(400).json({ error: 'Password must be at least 6 characters.' });
+        return;
+      }
+
+      const lat = Number(latitude);
+      const lng = Number(longitude);
+      const accuracy = Number(accuracyMeters);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        res.status(400).json({ error: 'A valid live GPS location is required. Stand at your loft and retake the photo.' });
+        return;
+      }
+      if (!Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 100) {
+        res.status(400).json({ error: 'GPS is not accurate enough. Wait for a precise location, then retake the live photo at your loft.' });
+        return;
+      }
+
+      const photoValue = String(photo || '');
+      if (!photoValue.startsWith('data:image/jpeg;base64,')) {
+        res.status(400).json({ error: 'A live loft photo is required.' });
+        return;
+      }
+      if (photoValue.length > 2_500_000) {
+        res.status(400).json({ error: 'Photo is too large. Retake the live photo and try again.' });
+        return;
+      }
+
+      const takenAt = new Date(photoTakenAt);
+      const ageMs = Date.now() - takenAt.getTime();
+      if (Number.isNaN(takenAt.getTime()) || ageMs < -60_000 || ageMs > 15 * 60 * 1000) {
+        res.status(400).json({ error: 'The photo must be taken live right now. Retake it at your loft.' });
+        return;
+      }
+
+      const players = await db.getPlayers();
+      const normalizedUsername = String(username).trim();
+      const existing = players.find(p => p.username.toLowerCase() === normalizedUsername.toLowerCase());
+      if (existing || normalizedUsername.toLowerCase() === 'admin') {
+        res.status(400).json({ error: 'Username is already taken.' });
+        return;
+      }
+
+      const playerId = `PLR-${String(players.length + 1).padStart(3, '0')}`;
+      const newPlayer: Player = {
+        id: playerId,
+        fullName: String(fullName).trim(),
+        address: address || '',
+        contactNumber: contactNumber || '',
+        email: email || '',
+        username: normalizedUsername,
+        passwordHash: hashPassword(password),
+        status: 'Pending',
+        loftName: String(loftName).trim(),
+        registrationPhoto: photoValue,
+        photoLatitude: parseFloat(lat.toFixed(6)),
+        photoLongitude: parseFloat(lng.toFixed(6)),
+        photoAccuracyMeters: parseFloat(accuracy.toFixed(1)),
+        photoTakenAt: takenAt.toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      const lofts = await db.getLofts();
+      const loftId = `LFT-${String(lofts.length + 1).padStart(3, '0')}`;
+      const newLoft: Loft = {
+        id: loftId,
+        loftName: String(loftName).trim(),
+        loftCode: loftId,
+        ownerId: playerId,
+        ownerName: newPlayer.fullName,
+        address: address || '',
+        latitude: newPlayer.photoLatitude!,
+        longitude: newPlayer.photoLongitude!,
+        createdAt: new Date().toISOString()
+      };
+
+      await db.addPlayer(newPlayer);
+      await db.addLoft(newLoft);
+      await logAction(playerId, newPlayer.username, 'PLAYER_SELF_REGISTER', `Player "${newPlayer.fullName}" self-registered loft "${newLoft.loftName}" at ${newLoft.latitude}, ${newLoft.longitude}. Awaiting approval.`);
+      await triggerNotification(
+        'Player Registration Pending',
+        `${newPlayer.fullName} registered loft "${newLoft.loftName}" and is waiting for approval.`,
+        'warning'
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'Registration submitted. An administrator must approve your account before you can log in.'
+      });
+    } catch (error: any) {
+      console.error('Error in public register:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
@@ -147,6 +269,12 @@ export async function createApiApp() {
         username,
         passwordHash: hashPassword(password),
         status: status || 'Active',
+        loftName: null,
+        registrationPhoto: null,
+        photoLatitude: null,
+        photoLongitude: null,
+        photoAccuracyMeters: null,
+        photoTakenAt: null,
         createdAt: new Date().toISOString()
       };
 

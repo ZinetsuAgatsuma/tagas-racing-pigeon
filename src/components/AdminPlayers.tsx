@@ -225,6 +225,7 @@ export default function AdminPlayers({
                 onChange={e => setStatus(e.target.value as PlayerStatus)}
                 className="w-full text-xs px-3.5 py-2.5 border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
               >
+                <option value="Pending">Pending approval</option>
                 <option value="Active">Active / Verified</option>
                 <option value="Inactive">Inactive / Suspended</option>
               </select>
@@ -278,6 +279,7 @@ export default function AdminPlayers({
               className="text-xs border border-slate-200 px-3 py-2 bg-white rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
             >
               <option value="all">All Players</option>
+              <option value="Pending">Pending approval</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
@@ -298,7 +300,8 @@ export default function AdminPlayers({
                   <th className="px-4 py-4 sm:px-6">Full Name</th>
                   <th className="px-4 py-4 sm:px-6">Username</th>
                   <th className="px-4 py-4 sm:px-6">Contact Details</th>
-                  <th className="px-4 py-4 sm:px-6">Address</th>
+                  <th className="px-4 py-4 sm:px-6">Loft / GPS</th>
+                  <th className="px-4 py-4 sm:px-6">Live Photo</th>
                   <th className="px-4 py-4 sm:px-6">Status</th>
                   <th className="px-4 py-4 text-right sm:px-6">Actions</th>
                 </tr>
@@ -313,18 +316,52 @@ export default function AdminPlayers({
                       <p className="font-medium text-slate-800">{p.contactNumber || 'No phone'}</p>
                       <p className="text-slate-400 text-[11px]">{p.email || 'No email'}</p>
                     </td>
-                    <td className="px-4 py-4 max-w-xs truncate sm:px-6">{p.address || 'N/A'}</td>
+                    <td className="px-4 py-4 max-w-xs sm:px-6">
+                      <p className="font-semibold text-slate-800">{p.loftName || 'No loft'}</p>
+                      <p className="font-mono text-[11px] text-slate-400">
+                        {p.photoLatitude != null && p.photoLongitude != null
+                          ? `${p.photoLatitude.toFixed(6)}, ${p.photoLongitude.toFixed(6)}`
+                          : p.address || 'N/A'}
+                      </p>
+                    </td>
+                    <td className="px-4 py-4 sm:px-6">
+                      {p.registrationPhoto ? (
+                        <a href={p.registrationPhoto} target="_blank" rel="noreferrer">
+                          <img src={p.registrationPhoto} alt={`${p.fullName} loft photo`} className="h-16 w-24 rounded-lg object-cover border border-slate-200" />
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">None</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 sm:px-6">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold ${
-                        p.status === 'Active' 
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
-                          : 'bg-red-50 text-red-700 border border-red-100'
+                        p.status === 'Active'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                          : p.status === 'Pending'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                            : 'bg-red-50 text-red-700 border border-red-100'
                       }`}>
                         {p.status}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-right whitespace-nowrap sm:px-6">
                       <div className="inline-flex items-center space-x-1.5">
+                        {p.status === 'Pending' && (
+                          <>
+                            <button
+                              onClick={() => onEditPlayer(p.id, { status: 'Active', fullName: p.fullName, username: p.username })}
+                              className="px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-100 cursor-pointer"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => onEditPlayer(p.id, { status: 'Inactive', fullName: p.fullName, username: p.username })}
+                              className="px-2.5 py-1.5 text-[10px] font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg border border-red-100 cursor-pointer"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => startEdit(p)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-100 transition-all cursor-pointer"

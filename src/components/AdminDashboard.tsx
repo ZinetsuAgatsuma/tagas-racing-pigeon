@@ -26,6 +26,7 @@ export default function AdminDashboard({
   const clockedCount = registrations.filter(r => r.status === 'Clocked').length;
   const verifiedCount = registrations.filter(r => r.status === 'Verified').length;
   const waitingCount = registrations.filter(r => r.status === 'Waiting').length;
+  const pendingPlayers = players.filter(p => p.status === 'Pending').length;
 
   // Find recent landing logs (clocked or verified)
   const recentClockings = [...registrations]
@@ -62,6 +63,16 @@ export default function AdminDashboard({
           </p>
         </div>
       </div>
+
+      {pendingPlayers > 0 && (
+        <button
+          type="button"
+          onClick={() => setActiveTab('players')}
+          className="w-full text-left bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl px-5 py-4 text-sm font-semibold"
+        >
+          {pendingPlayers} player {pendingPlayers === 1 ? 'registration is' : 'registrations are'} waiting for approval. Review the live loft photo and GPS, then approve.
+        </button>
+      )}
 
       {/* Grid Cards Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

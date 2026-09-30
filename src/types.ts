@@ -1,4 +1,4 @@
-export type PlayerStatus = 'Active' | 'Inactive';
+export type PlayerStatus = 'Pending' | 'Active' | 'Inactive';
 export type EventStatus = 'Upcoming' | 'Ongoing' | 'Finished';
 export type ClockingStatus = 'Waiting' | 'Clocked' | 'Verified';
 
@@ -11,6 +11,12 @@ export interface Player {
   username: string;
   passwordHash: string;
   status: PlayerStatus;
+  loftName: string | null;
+  registrationPhoto: string | null; // Live JPEG data URL stamped with GPS
+  photoLatitude: number | null;
+  photoLongitude: number | null;
+  photoAccuracyMeters: number | null;
+  photoTakenAt: string | null;
   createdAt: string;
 }
 
